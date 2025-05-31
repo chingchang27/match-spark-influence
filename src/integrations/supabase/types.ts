@@ -9,7 +9,176 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      businesses: {
+        Row: {
+          business_type: string | null
+          created_at: string | null
+          id: string
+          organization_name: string | null
+          profile_id: string | null
+          public_contact: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          business_type?: string | null
+          created_at?: string | null
+          id?: string
+          organization_name?: string | null
+          profile_id?: string | null
+          public_contact?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          business_type?: string | null
+          created_at?: string | null
+          id?: string
+          organization_name?: string | null
+          profile_id?: string | null
+          public_contact?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "businesses_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      favorites: {
+        Row: {
+          business_profile_id: string | null
+          created_at: string | null
+          id: string
+          influencer_profile_id: string | null
+        }
+        Insert: {
+          business_profile_id?: string | null
+          created_at?: string | null
+          id?: string
+          influencer_profile_id?: string | null
+        }
+        Update: {
+          business_profile_id?: string | null
+          created_at?: string | null
+          id?: string
+          influencer_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_business_profile_id_fkey"
+            columns: ["business_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorites_influencer_profile_id_fkey"
+            columns: ["influencer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      influencers: {
+        Row: {
+          created_at: string | null
+          facebook_url: string | null
+          gender: Database["public"]["Enums"]["gender_type"] | null
+          id: string
+          instagram_followers: number | null
+          instagram_url: string | null
+          price_per_promotion: number | null
+          profile_id: string | null
+          profile_image_url: string | null
+          promotion_category:
+            | Database["public"]["Enums"]["promotion_category"]
+            | null
+          public_contact: string | null
+          tier: Database["public"]["Enums"]["influencer_tier"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          facebook_url?: string | null
+          gender?: Database["public"]["Enums"]["gender_type"] | null
+          id?: string
+          instagram_followers?: number | null
+          instagram_url?: string | null
+          price_per_promotion?: number | null
+          profile_id?: string | null
+          profile_image_url?: string | null
+          promotion_category?:
+            | Database["public"]["Enums"]["promotion_category"]
+            | null
+          public_contact?: string | null
+          tier?: Database["public"]["Enums"]["influencer_tier"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          facebook_url?: string | null
+          gender?: Database["public"]["Enums"]["gender_type"] | null
+          id?: string
+          instagram_followers?: number | null
+          instagram_url?: string | null
+          price_per_promotion?: number | null
+          profile_id?: string | null
+          profile_image_url?: string | null
+          promotion_category?:
+            | Database["public"]["Enums"]["promotion_category"]
+            | null
+          public_contact?: string | null
+          tier?: Database["public"]["Enums"]["influencer_tier"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "influencers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          approval_status: Database["public"]["Enums"]["approval_status"] | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string | null
+        }
+        Insert: {
+          approval_status?:
+            | Database["public"]["Enums"]["approval_status"]
+            | null
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Update: {
+          approval_status?:
+            | Database["public"]["Enums"]["approval_status"]
+            | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +187,19 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      approval_status: "pending" | "approved" | "rejected"
+      gender_type: "male" | "female" | "other"
+      influencer_tier: "mega" | "macro" | "micro"
+      promotion_category:
+        | "fashion"
+        | "food"
+        | "sports"
+        | "beauty"
+        | "tech"
+        | "lifestyle"
+        | "travel"
+        | "fitness"
+      user_role: "influencer" | "business" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +314,21 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      approval_status: ["pending", "approved", "rejected"],
+      gender_type: ["male", "female", "other"],
+      influencer_tier: ["mega", "macro", "micro"],
+      promotion_category: [
+        "fashion",
+        "food",
+        "sports",
+        "beauty",
+        "tech",
+        "lifestyle",
+        "travel",
+        "fitness",
+      ],
+      user_role: ["influencer", "business", "admin"],
+    },
   },
 } as const
