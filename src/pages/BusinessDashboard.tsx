@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,12 +7,14 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Search } from 'lucide-react';
 
+type PromotionCategory = 'fashion' | 'food' | 'sports' | 'beauty' | 'tech' | 'lifestyle' | 'travel' | 'fitness';
+
 const BusinessDashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [influencers, setInfluencers] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<any[]>([]);
-  const [searchCategory, setSearchCategory] = useState('');
+  const [searchCategory, setSearchCategory] = useState<PromotionCategory | ''>('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -163,7 +164,7 @@ const BusinessDashboard = () => {
               <div className="flex gap-4">
                 <select
                   value={searchCategory}
-                  onChange={(e) => setSearchCategory(e.target.value)}
+                  onChange={(e) => setSearchCategory(e.target.value as PromotionCategory | '')}
                   className="flex-1 p-2 rounded bg-white/10 border border-white/20 text-white"
                 >
                   <option value="">All Categories</option>

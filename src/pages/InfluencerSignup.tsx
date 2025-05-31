@@ -66,7 +66,7 @@ const InfluencerSignup = () => {
         }
       }
 
-      // Insert influencer data
+      // Insert influencer data with correct column names
       const { error: influencerError } = await supabase
         .from('influencers')
         .insert({
