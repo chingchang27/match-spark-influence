@@ -21,7 +21,7 @@ const BusinessLogin = () => {
 
     try {
       // Check for admin credentials
-      if (formData.email === 'kovvuchingchang@gmail.com') {
+      if (formData.email === 'kovvuchingchang@gmail.com' && formData.password === 'admin@123?') {
         navigate('/admin-dashboard');
         return;
       }
