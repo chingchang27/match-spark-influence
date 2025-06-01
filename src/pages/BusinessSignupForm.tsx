@@ -25,24 +25,38 @@ const BusinessSignupForm = () => {
     setLoading(true);
 
     try {
+      console.log('Starting business signup process...');
+      
       // First create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
       });
 
+      console.log('Auth signup result:', { authData, authError });
+
       if (authError) throw authError;
 
-      // Insert profile
+      if (!authData.user) {
+        throw new Error('User creation failed - no user returned');
+      }
+
+      // Wait a moment for auth to process
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Insert profile using the authenticated user's ID
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .insert({
+          id: authData.user.id,
           email: formData.email,
           name: formData.name,
           role: 'business'
         })
         .select()
         .single();
+
+      console.log('Profile creation result:', { profile, profileError });
 
       if (profileError) throw profileError;
 
@@ -56,11 +70,14 @@ const BusinessSignupForm = () => {
           public_contact: formData.publicContact
         });
 
+      console.log('Business creation result:', { businessError });
+
       if (businessError) throw businessError;
 
       toast.success('Your account was successfully created. Please check your email to verify your account.');
       navigate('/signin/business');
     } catch (error: any) {
+      console.error('Signup error:', error);
       toast.error(error.message || 'Something went wrong');
     } finally {
       setLoading(false);

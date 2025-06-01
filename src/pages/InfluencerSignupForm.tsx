@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,14 +15,12 @@ const InfluencerSignupForm = () => {
     name: '',
     email: '',
     password: '',
-    instagramFollowers: '',
     instagramUrl: '',
-    facebookUrl: '',
-    publicContact: '',
-    gender: '',
+    instagramFollowers: '',
     promotionCategory: '',
     pricePerPromotion: '',
-    profileImage: null as File | null
+    publicContact: '',
+    gender: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,18 +28,30 @@ const InfluencerSignupForm = () => {
     setLoading(true);
 
     try {
+      console.log('Starting influencer signup process...');
+      
       // First create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
       });
 
+      console.log('Auth signup result:', { authData, authError });
+
       if (authError) throw authError;
 
-      // Insert profile
+      if (!authData.user) {
+        throw new Error('User creation failed - no user returned');
+      }
+
+      // Wait a moment for auth to process
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Insert profile using the authenticated user's ID
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .insert({
+          id: authData.user.id,
           email: formData.email,
           name: formData.name,
           role: 'influencer'
@@ -48,48 +59,31 @@ const InfluencerSignupForm = () => {
         .select()
         .single();
 
+      console.log('Profile creation result:', { profile, profileError });
+
       if (profileError) throw profileError;
 
-      // Upload profile image if provided
-      let profileImageUrl = null;
-      if (formData.profileImage) {
-        const fileExt = formData.profileImage.name.split('.').pop();
-        const fileName = `${profile.id}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('profile-images')
-          .upload(fileName, formData.profileImage);
-
-        if (!uploadError) {
-          const { data } = supabase.storage
-            .from('profile-images')
-            .getPublicUrl(fileName);
-          profileImageUrl = data.publicUrl;
-        }
-      }
-
       // Insert influencer data
-      const influencerData: any = {
-        profile_id: profile.id,
-        instagram_followers: parseInt(formData.instagramFollowers),
-        instagram_url: formData.instagramUrl,
-        facebook_url: formData.facebookUrl,
-        public_contact: formData.publicContact,
-        gender: formData.gender,
-        promotion_category: formData.promotionCategory,
-        price_per_promotion: parseFloat(formData.pricePerPromotion),
-        profile_image_url: profileImageUrl
-      };
-
       const { error: influencerError } = await supabase
         .from('influencers')
-        .insert(influencerData);
+        .insert({
+          profile_id: profile.id,
+          instagram_url: formData.instagramUrl,
+          instagram_followers: parseInt(formData.instagramFollowers),
+          promotion_category: formData.promotionCategory as any,
+          price_per_promotion: parseFloat(formData.pricePerPromotion),
+          public_contact: formData.publicContact,
+          gender: formData.gender as any
+        });
+
+      console.log('Influencer creation result:', { influencerError });
 
       if (influencerError) throw influencerError;
 
       toast.success('Your account was successfully created. Please check your email to verify your account.');
       navigate('/signin/influencer');
     } catch (error: any) {
+      console.error('Signup error:', error);
       toast.error(error.message || 'Something went wrong');
     } finally {
       setLoading(false);
@@ -138,20 +132,8 @@ const InfluencerSignupForm = () => {
               </div>
 
               <div>
-                <label className="text-white block mb-2">Instagram Followers *</label>
-                <Input
-                  type="number"
-                  required
-                  value={formData.instagramFollowers}
-                  onChange={(e) => setFormData({...formData, instagramFollowers: e.target.value})}
-                  className="bg-white/10 border-white/20 text-white"
-                />
-              </div>
-
-              <div>
                 <label className="text-white block mb-2">Instagram URL *</label>
                 <Input
-                  type="url"
                   required
                   value={formData.instagramUrl}
                   onChange={(e) => setFormData({...formData, instagramUrl: e.target.value})}
@@ -160,38 +142,14 @@ const InfluencerSignupForm = () => {
               </div>
 
               <div>
-                <label className="text-white block mb-2">Facebook URL</label>
+                <label className="text-white block mb-2">Instagram Followers *</label>
                 <Input
-                  type="url"
-                  value={formData.facebookUrl}
-                  onChange={(e) => setFormData({...formData, facebookUrl: e.target.value})}
+                  type="number"
+                  required
+                  value={formData.instagramFollowers}
+                  onChange={(e) => setFormData({...formData, instagramFollowers: e.target.value})}
                   className="bg-white/10 border-white/20 text-white"
                 />
-              </div>
-
-              <div>
-                <label className="text-white block mb-2">Public Contact Info *</label>
-                <Textarea
-                  required
-                  value={formData.publicContact}
-                  onChange={(e) => setFormData({...formData, publicContact: e.target.value})}
-                  className="bg-white/10 border-white/20 text-white"
-                />
-              </div>
-
-              <div>
-                <label className="text-white block mb-2">Gender *</label>
-                <select
-                  required
-                  value={formData.gender}
-                  onChange={(e) => setFormData({...formData, gender: e.target.value})}
-                  className="w-full p-2 rounded bg-white/10 border border-white/20 text-white"
-                >
-                  <option value="">Select Gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
               </div>
 
               <div>
@@ -227,11 +185,26 @@ const InfluencerSignupForm = () => {
               </div>
 
               <div>
-                <label className="text-white block mb-2">Profile Image</label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setFormData({...formData, profileImage: e.target.files?.[0] || null})}
+                <label className="text-white block mb-2">Gender *</label>
+                <select
+                  required
+                  value={formData.gender}
+                  onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                  className="w-full p-2 rounded bg-white/10 border border-white/20 text-white"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-white block mb-2">Public Contact Info *</label>
+                <Textarea
+                  required
+                  value={formData.publicContact}
+                  onChange={(e) => setFormData({...formData, publicContact: e.target.value})}
                   className="bg-white/10 border-white/20 text-white"
                 />
               </div>
