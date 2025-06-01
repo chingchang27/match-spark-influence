@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Search } from 'lucide-react';
+import { Heart, Search, MessageCircle } from 'lucide-react';
 
 type PromotionCategory = 'fashion' | 'food' | 'sports' | 'beauty' | 'tech' | 'lifestyle' | 'travel' | 'fitness';
 
@@ -123,6 +123,10 @@ const BusinessDashboard = () => {
     }
   };
 
+  const openAdminChat = () => {
+    toast.info('Admin chat feature will be available soon!');
+  };
+
   useEffect(() => {
     fetchInfluencers();
   }, [searchCategory]);
@@ -150,9 +154,15 @@ const BusinessDashboard = () => {
       <div className="max-w-6xl mx-auto pt-20">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-white">Business Dashboard</h1>
-          <Button onClick={() => navigate('/')} variant="outline">
-            Back to Home
-          </Button>
+          <div className="flex gap-4">
+            <Button onClick={openAdminChat} className="bg-gradient-to-r from-green-500 to-emerald-500">
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Chat with Admin
+            </Button>
+            <Button onClick={() => navigate('/')} variant="outline">
+              Back to Home
+            </Button>
+          </div>
         </div>
 
         <div className="mb-6">

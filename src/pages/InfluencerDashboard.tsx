@@ -2,11 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { Edit3, MessageCircle, Save, X } from 'lucide-react';
 
 const InfluencerDashboard = () => {
   const navigate = useNavigate();
@@ -14,6 +16,13 @@ const InfluencerDashboard = () => {
   const [influencer, setInfluencer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    instagram_followers: '',
+    price_per_promotion: '',
+    public_contact: '',
+    instagram_url: '',
+    facebook_url: ''
+  });
 
   useEffect(() => {
     fetchProfile();
@@ -21,8 +30,6 @@ const InfluencerDashboard = () => {
 
   const fetchProfile = async () => {
     try {
-      // In a real app, you'd get the current user's email from authentication
-      // For demo purposes, we'll use a placeholder
       const userEmail = localStorage.getItem('currentUserEmail') || 'demo@example.com';
       
       const { data: profileData, error } = await supabase
@@ -35,15 +42,72 @@ const InfluencerDashboard = () => {
         .eq('role', 'influencer')
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Profile fetch error:', error);
+        toast.error('Failed to load profile');
+        navigate('/signin');
+        return;
+      }
       
       setProfile(profileData);
-      setInfluencer(profileData.influencers[0]);
+      if (profileData.influencers && profileData.influencers.length > 0) {
+        const influencerData = profileData.influencers[0];
+        setInfluencer(influencerData);
+        setFormData({
+          instagram_followers: influencerData.instagram_followers?.toString() || '',
+          price_per_promotion: influencerData.price_per_promotion?.toString() || '',
+          public_contact: influencerData.public_contact || '',
+          instagram_url: influencerData.instagram_url || '',
+          facebook_url: influencerData.facebook_url || ''
+        });
+      }
     } catch (error: any) {
+      console.error('Fetch profile error:', error);
       toast.error('Failed to load profile');
       navigate('/signin');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEdit = () => {
+    setEditing(true);
+  };
+
+  const handleCancel = () => {
+    setEditing(false);
+    // Reset form data
+    if (influencer) {
+      setFormData({
+        instagram_followers: influencer.instagram_followers?.toString() || '',
+        price_per_promotion: influencer.price_per_promotion?.toString() || '',
+        public_contact: influencer.public_contact || '',
+        instagram_url: influencer.instagram_url || '',
+        facebook_url: influencer.facebook_url || ''
+      });
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      const { error } = await supabase
+        .from('influencers')
+        .update({
+          instagram_followers: parseInt(formData.instagram_followers),
+          price_per_promotion: parseFloat(formData.price_per_promotion),
+          public_contact: formData.public_contact,
+          instagram_url: formData.instagram_url,
+          facebook_url: formData.facebook_url
+        })
+        .eq('profile_id', profile.id);
+
+      if (error) throw error;
+
+      toast.success('Profile updated successfully');
+      setEditing(false);
+      fetchProfile();
+    } catch (error: any) {
+      toast.error('Failed to update profile');
     }
   };
 
@@ -76,6 +140,10 @@ const InfluencerDashboard = () => {
     }
   };
 
+  const openAdminChat = () => {
+    toast.info('Admin chat feature will be available soon!');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
@@ -89,15 +157,40 @@ const InfluencerDashboard = () => {
       <div className="max-w-4xl mx-auto pt-20">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-white">Influencer Dashboard</h1>
-          <Button onClick={() => navigate('/')} variant="outline">
-            Back to Home
-          </Button>
+          <div className="flex gap-4">
+            <Button onClick={openAdminChat} className="bg-gradient-to-r from-green-500 to-emerald-500">
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Chat with Admin
+            </Button>
+            <Button onClick={() => navigate('/')} variant="outline">
+              Back to Home
+            </Button>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="bg-white/10 backdrop-blur-lg border-white/20">
             <CardHeader>
-              <CardTitle className="text-white">Profile Information</CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-white">Profile Information</CardTitle>
+                {!editing ? (
+                  <Button onClick={handleEdit} size="sm" className="bg-gradient-to-r from-pink-500 to-purple-500">
+                    <Edit3 className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button onClick={handleSave} size="sm" className="bg-green-600 hover:bg-green-700">
+                      <Save className="w-4 h-4 mr-2" />
+                      Save
+                    </Button>
+                    <Button onClick={handleCancel} size="sm" variant="outline">
+                      <X className="w-4 h-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-4">
@@ -119,53 +212,108 @@ const InfluencerDashboard = () => {
                 </div>
               </div>
 
-              <div className="text-white space-y-2">
-                <p><strong>Followers:</strong> {influencer?.instagram_followers?.toLocaleString()}</p>
-                <p><strong>Category:</strong> {influencer?.promotion_category}</p>
-                <p><strong>Price:</strong> ${influencer?.price_per_promotion}</p>
-                <p><strong>Status:</strong> 
-                  <span className={`ml-2 px-2 py-1 rounded text-sm ${
-                    profile?.approval_status === 'approved' ? 'bg-green-500' : 
-                    profile?.approval_status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
-                  }`}>
-                    {profile?.approval_status}
-                  </span>
-                </p>
-              </div>
+              {editing ? (
+                <div className="text-white space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Followers:</label>
+                    <Input
+                      type="number"
+                      value={formData.instagram_followers}
+                      onChange={(e) => setFormData({...formData, instagram_followers: e.target.value})}
+                      className="bg-white/10 border-white/20 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Price per Promotion ($):</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.price_per_promotion}
+                      onChange={(e) => setFormData({...formData, price_per_promotion: e.target.value})}
+                      className="bg-white/10 border-white/20 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Instagram URL:</label>
+                    <Input
+                      value={formData.instagram_url}
+                      onChange={(e) => setFormData({...formData, instagram_url: e.target.value})}
+                      className="bg-white/10 border-white/20 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Facebook URL:</label>
+                    <Input
+                      value={formData.facebook_url}
+                      onChange={(e) => setFormData({...formData, facebook_url: e.target.value})}
+                      className="bg-white/10 border-white/20 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Contact Info:</label>
+                    <Textarea
+                      value={formData.public_contact}
+                      onChange={(e) => setFormData({...formData, public_contact: e.target.value})}
+                      className="bg-white/10 border-white/20 text-white"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="text-white space-y-2">
+                  <p><strong>Followers:</strong> {influencer?.instagram_followers?.toLocaleString()}</p>
+                  <p><strong>Category:</strong> {influencer?.promotion_category}</p>
+                  <p><strong>Price:</strong> ${influencer?.price_per_promotion}</p>
+                  <p><strong>Status:</strong> 
+                    <span className={`ml-2 px-2 py-1 rounded text-sm ${
+                      profile?.approval_status === 'approved' ? 'bg-green-500' : 
+                      profile?.approval_status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
+                    }`}>
+                      {profile?.approval_status}
+                    </span>
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           <Card className="bg-white/10 backdrop-blur-lg border-white/20">
             <CardHeader>
-              <CardTitle className="text-white">Quick Stats</CardTitle>
+              <CardTitle className="text-white">Card Preview</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gradient-to-r from-pink-500 to-purple-500 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-white">{influencer?.instagram_followers || 0}</div>
-                  <div className="text-white/80">Followers</div>
+              <div className="bg-white/20 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                <div className="text-center">
+                  <div className="relative mb-4">
+                    <Avatar className="w-16 h-16 mx-auto">
+                      <AvatarImage src={influencer?.profile_image_url} />
+                      <AvatarFallback className="bg-gradient-to-r from-pink-500 to-purple-500 text-white">
+                        {profile?.name?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs px-2 py-1 rounded-full">
+                      {influencer?.instagram_followers ? `${(influencer.instagram_followers / 1000).toFixed(0)}K` : '0K'}
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-lg font-semibold text-white mb-2">{profile?.name}</h3>
+                  <p className="text-gray-300 text-sm mb-4">{influencer?.promotion_category || 'Category'}</p>
+                  
+                  <div className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                    ${influencer?.price_per_promotion || '0'}/post
+                  </div>
                 </div>
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-white">${influencer?.price_per_promotion || 0}</div>
-                  <div className="text-white/80">Per Post</div>
-                </div>
+              </div>
+              
+              <div className="mt-4 text-center">
+                <p className="text-gray-300 text-sm">
+                  {profile?.approval_status === 'approved' 
+                    ? 'Your card is live on the website!' 
+                    : 'Waiting for admin approval to go live'}
+                </p>
               </div>
             </CardContent>
           </Card>
         </div>
-
-        <Card className="bg-white/10 backdrop-blur-lg border-white/20 mt-6">
-          <CardHeader>
-            <CardTitle className="text-white">Contact Information</CardTitle>
-          </CardHeader>
-          <CardContent className="text-white space-y-2">
-            <p><strong>Instagram:</strong> <a href={influencer?.instagram_url} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:underline">{influencer?.instagram_url}</a></p>
-            {influencer?.facebook_url && (
-              <p><strong>Facebook:</strong> <a href={influencer?.facebook_url} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:underline">{influencer?.facebook_url}</a></p>
-            )}
-            <p><strong>Contact:</strong> {influencer?.public_contact}</p>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ import ServicesSection from '../components/ServicesSection';
 import InfluencerSection from '../components/InfluencerSection';
 import ImpactSection from '../components/ImpactSection';
 import AboutSection from '../components/AboutSection';
-import ContactSection from '../components/ContactSection';
+import BusinessShowcaseSection from '../components/BusinessShowcaseSection';
 
 const Index = () => {
   return (
@@ -18,8 +18,8 @@ const Index = () => {
       <InfluencerSection type="macro" />
       <InfluencerSection type="micro" />
       <ImpactSection />
+      <BusinessShowcaseSection />
       <AboutSection />
-      <ContactSection />
     </div>
   );
 };

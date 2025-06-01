@@ -44,14 +44,15 @@ const BusinessSignupForm = () => {
       // Wait a moment for auth to process
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Insert profile using the authenticated user's ID
+      // Insert profile using the authenticated user's ID with approved status
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .insert({
           id: authData.user.id,
           email: formData.email,
           name: formData.name,
-          role: 'business'
+          role: 'business',
+          approval_status: 'approved' // Auto-approve business accounts
         })
         .select()
         .single();
@@ -74,7 +75,7 @@ const BusinessSignupForm = () => {
 
       if (businessError) throw businessError;
 
-      toast.success('Your account was successfully created. Please check your email to verify your account.');
+      toast.success('Your business account was successfully created and approved!');
       navigate('/signin/business');
     } catch (error: any) {
       console.error('Signup error:', error);

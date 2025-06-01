@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import InfluencerCard from './InfluencerCard';
 import InfluencerModal from './InfluencerModal';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Influencer {
   id: number;
@@ -15,12 +16,48 @@ interface Influencer {
   price: string;
 }
 
+interface DatabaseInfluencer {
+  id: string;
+  instagram_followers: number;
+  promotion_category: string;
+  price_per_promotion: number;
+  instagram_url: string;
+  public_contact: string;
+  profile_image_url?: string;
+  profiles: {
+    name: string;
+  };
+}
+
 interface InfluencerSectionProps {
   type: 'mega' | 'macro' | 'micro';
 }
 
 const InfluencerSection: React.FC<InfluencerSectionProps> = ({ type }) => {
   const [selectedInfluencer, setSelectedInfluencer] = useState<Influencer | null>(null);
+  const [databaseInfluencers, setDatabaseInfluencers] = useState<DatabaseInfluencer[]>([]);
+
+  useEffect(() => {
+    fetchApprovedInfluencers();
+  }, [type]);
+
+  const fetchApprovedInfluencers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('influencers')
+        .select(`
+          *,
+          profiles!inner (name, approval_status)
+        `)
+        .eq('profiles.approval_status', 'approved')
+        .eq('tier', type);
+
+      if (error) throw error;
+      setDatabaseInfluencers(data || []);
+    } catch (error) {
+      console.error('Error fetching influencers:', error);
+    }
+  };
 
   const getSectionData = () => {
     switch (type) {
@@ -28,128 +65,52 @@ const InfluencerSection: React.FC<InfluencerSectionProps> = ({ type }) => {
         return {
           title: 'Mega Influencers',
           subtitle: 'Celebrity-level reach with 1M+ followers',
-          influencers: [
-            {
-              id: 1,
-              name: 'Alex Rodriguez',
-              image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face',
-              followers: '2.5M',
-              category: 'Lifestyle',
-              instagramUrl: 'https://instagram.com/alexrodriguez',
-              collaboratedBrands: ['Nike', 'Apple', 'Tesla'],
-              contact: 'alex@influence.com',
-              price: '$50,000/post'
-            },
-            {
-              id: 2,
-              name: 'Sarah Johnson',
-              image: 'https://images.unsplash.com/photo-1494790108755-2616b332c0e3?w=300&h=300&fit=crop&crop=face',
-              followers: '3.2M',
-              category: 'Fashion',
-              instagramUrl: 'https://instagram.com/sarahjohnson',
-              collaboratedBrands: ['Gucci', 'Chanel', 'Louis Vuitton'],
-              contact: 'sarah@fashioninfluence.com',
-              price: '$75,000/post'
-            },
-            {
-              id: 3,
-              name: 'Mike Chen',
-              image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop&crop=face',
-              followers: '1.8M',
-              category: 'Tech',
-              instagramUrl: 'https://instagram.com/mikechen',
-              collaboratedBrands: ['Samsung', 'Microsoft', 'Google'],
-              contact: 'mike@techinfluence.com',
-              price: '$40,000/post'
-            }
-          ]
         };
       case 'macro':
         return {
           title: 'Macro Influencers',
           subtitle: 'Established creators with 100K-1M followers',
-          influencers: [
-            {
-              id: 4,
-              name: 'Emma Davis',
-              image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=300&fit=crop&crop=face',
-              followers: '450K',
-              category: 'Beauty',
-              instagramUrl: 'https://instagram.com/emmadavis',
-              collaboratedBrands: ['Sephora', 'MAC', 'Urban Decay'],
-              contact: 'emma@beautyinfluence.com',
-              price: '$15,000/post'
-            },
-            {
-              id: 5,
-              name: 'James Wilson',
-              image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop&crop=face',
-              followers: '320K',
-              category: 'Fitness',
-              instagramUrl: 'https://instagram.com/jameswilson',
-              collaboratedBrands: ['Adidas', 'Under Armour', 'Protein World'],
-              contact: 'james@fitinfluence.com',
-              price: '$12,000/post'
-            },
-            {
-              id: 6,
-              name: 'Lisa Park',
-              image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&h=300&fit=crop&crop=face',
-              followers: '280K',
-              category: 'Travel',
-              instagramUrl: 'https://instagram.com/lisapark',
-              collaboratedBrands: ['Airbnb', 'Booking.com', 'Emirates'],
-              contact: 'lisa@travelinfluence.com',
-              price: '$10,000/post'
-            }
-          ]
         };
       case 'micro':
         return {
           title: 'Micro Influencers',
           subtitle: 'Niche experts with 10K-100K followers',
-          influencers: [
-            {
-              id: 7,
-              name: 'Tom Garcia',
-              image: 'https://images.unsplash.com/photo-1507592345855-de8e43068a37?w=300&h=300&fit=crop&crop=face',
-              followers: '85K',
-              category: 'Food',
-              instagramUrl: 'https://instagram.com/tomgarcia',
-              collaboratedBrands: ['HelloFresh', 'Blue Apron', 'Whole Foods'],
-              contact: 'tom@foodinfluence.com',
-              price: '$3,000/post'
-            },
-            {
-              id: 8,
-              name: 'Anna Martinez',
-              image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=300&h=300&fit=crop&crop=face',
-              followers: '62K',
-              category: 'Art',
-              instagramUrl: 'https://instagram.com/annamartinez',
-              collaboratedBrands: ['Adobe', 'Wacom', 'Skillshare'],
-              contact: 'anna@artinfluence.com',
-              price: '$2,500/post'
-            },
-            {
-              id: 9,
-              name: 'David Kim',
-              image: 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=300&h=300&fit=crop&crop=face',
-              followers: '45K',
-              category: 'Gaming',
-              instagramUrl: 'https://instagram.com/davidkim',
-              collaboratedBrands: ['Razer', 'ASUS', 'Steam'],
-              contact: 'david@gameinfluence.com',
-              price: '$2,000/post'
-            }
-          ]
         };
       default:
-        return { title: '', subtitle: '', influencers: [] };
+        return { title: '', subtitle: '' };
     }
   };
 
-  const { title, subtitle, influencers } = getSectionData();
+  const convertToInfluencerFormat = (dbInfluencer: DatabaseInfluencer): Influencer => {
+    return {
+      id: parseInt(dbInfluencer.id.slice(0, 8), 16), // Convert UUID to number
+      name: dbInfluencer.profiles.name,
+      image: dbInfluencer.profile_image_url || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face`,
+      followers: formatFollowers(dbInfluencer.instagram_followers),
+      category: dbInfluencer.promotion_category,
+      instagramUrl: dbInfluencer.instagram_url,
+      collaboratedBrands: [], // This would need to be added to the database schema
+      contact: dbInfluencer.public_contact,
+      price: `$${dbInfluencer.price_per_promotion}/post`
+    };
+  };
+
+  const formatFollowers = (count: number): string => {
+    if (count >= 1000000) {
+      return `${(count / 1000000).toFixed(1)}M`;
+    } else if (count >= 1000) {
+      return `${(count / 1000).toFixed(0)}K`;
+    }
+    return count.toString();
+  };
+
+  const { title, subtitle } = getSectionData();
+  const influencers = databaseInfluencers.map(convertToInfluencerFormat);
+
+  // If no approved influencers for this tier, don't render the section
+  if (influencers.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8">

@@ -22,6 +22,7 @@ const BusinessLogin = () => {
     try {
       // Check for admin credentials
       if (formData.email === 'kovvuchingchang@gmail.com' && formData.password === 'admin@123?') {
+        localStorage.setItem('currentUserEmail', formData.email);
         navigate('/admin-dashboard');
         return;
       }
@@ -33,14 +34,16 @@ const BusinessLogin = () => {
 
       if (error) throw error;
 
-      // Check if user is a business
+      // Check if user is a business and approved
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, approval_status')
         .eq('email', formData.email)
         .single();
 
       if (profile?.role === 'business') {
+        // Store email for dashboard access
+        localStorage.setItem('currentUserEmail', formData.email);
         toast.success('Login successful!');
         navigate('/business-dashboard');
       } else {
